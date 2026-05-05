@@ -1,0 +1,33 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Диаграмма контейнеров: Система открытия депозитов
+
+Container_Boundary(deposit_boundary, "Система открытия депозитов") {
+    Container(api_gateway, "Депозитный шлюз", "Java Spring Boot", "Обрабатывает запросы от ИБ/сайта, управляет кэшем и очередями")
+    ContainerDb(redis, "Redis Cache", "In-memory storage", "Хранит кэш ставок и сессии")
+    Container(rabbitmq, "RabbitMQ", "Брокер сообщений", "Асинхронная передача заявок в АБС")
+    Container(adapter, "Адаптер АБС", "Java / C#", "Читает очередь, пишет в таблицы Oracle")
+    ContainerDb(postgres, "PostgreSQL", "БД шлюза", "Хранит заявки, логи")
+}
+
+Container_Ext(internet_bank, "Интернет-банк", "ASP.NET MVC", "Монолит")
+Container_Ext(site, "Сайт", "PHP + React", "")
+ContainerDb(abs_db, "АБС (Oracle)", "БД", "Хранит депозиты, ставки, заявки")
+Container_Ext(abs_client, "АБС (Delphi-клиент)", "Десктоп", "Используется бэк-офисом")
+Container_Ext(cc_system, "Система кол-центра", "Java + PostgreSQL", "")
+Container_Ext(sms, "СМС-шлюз", "Внешний", "")
+
+Rel(internet_bank, api_gateway, "Вызов REST API", "HTTPS")
+Rel(site, api_gateway, "Вызов REST API", "HTTPS")
+Rel(api_gateway, postgres, "Чтение/запись заявок/логов", "")
+Rel(api_gateway, redis, "Чтение/запись кэша", "Redis protocol")
+Rel(api_gateway, rabbitmq, "Отправка заявок в очередь", "AMQP")
+Rel(api_gateway, cc_system, "Передача заявки на звонок", "HTTPS")
+Rel(api_gateway, sms, "Отправка СМС", "HTTPS")
+Rel(rabbitmq, adapter, "Консьюмер очереди")
+Rel(adapter, abs_db, "Прямая запись в таблицы", "JDBC/ODBC")
+Rel(abs_db, abs_client, "Отображение заявок бэк-офису", "Delphi")
+Rel(abs_client, abs_db, "Обновление статуса заявки")
+
+@enduml

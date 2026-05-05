@@ -1,0 +1,20 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Контекстная диаграмма: Интеграция ставок для кол-центров
+
+Person(cc_operator, "Оператор кол-центра банка", "Консультирует клиентов по ставкам")
+Person(partner_operator, "Оператор партнёрского кол-центра", "Консультирует клиентов (аутсорсинг)")
+
+System(deposit_gateway, "Депозитный шлюз", "Управляет ставками, кэшем, выгрузкой файлов")
+System_Ext(cc_system, "Система кол-центра (микросервисы)", "Java, PostgreSQL")
+System_Ext(partner_cc_system, "Система партнёрского кол-центра", "Внешняя, поддерживает только файловый обмен")
+System_Ext(sftp_server, "SFTP-сервер", "Хранилище файлов банка")
+
+Rel(cc_operator, cc_system, "Смотрит ставки")
+Rel(partner_operator, partner_cc_system, "Смотрит ставки")
+Rel(cc_system, deposit_gateway, "Вызов REST API /api/deposit-rates", "HTTPS")
+Rel(partner_cc_system, sftp_server, "Скачивает rates.csv", "SFTP")
+Rel(deposit_gateway, sftp_server, "Выгружает rates.csv по расписанию", "SFTP")
+
+@enduml

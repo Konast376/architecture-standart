@@ -1,0 +1,22 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Контейнеры: расширение депозитного шлюза и интеграция с кол-центрами
+
+Container_Boundary(deposit_boundary, "Система открытия депозитов (расширенная)") {
+    Container(gateway, "Депозитный шлюз", "Java Spring Boot", "REST API для ИБ/сайта, кэш ставок, выгрузка на SFTP")
+    ContainerDb(redis, "Redis", "In-memory storage", "Хранит ставки (общие и персонализированные)")
+    Container(scheduler, "Планировщик выгрузки", "Spring @Scheduled", "Генерирует CSV-файл со ставками и кладёт на SFTP")
+}
+
+Container_Ext(cc_system, "Система кол-центра", "Java + React", "Содержит модуль вызова API ставок")
+Container_Ext(sftp, "SFTP-сервер", "Внешний", "Принимает rates.csv")
+Container_Ext(partner_cc, "Система партнёрского кол-центра", "Внешняя", "Забирает rates.csv по расписанию")
+
+Rel(cc_system, gateway, "GET /api/v1/deposit-rates", "HTTPS, mTLS")
+Rel(gateway, redis, "Чтение кэша")
+Rel(scheduler, gateway, "Использует компонент генерации файлов")
+Rel(scheduler, sftp, "Выкладывает файл (SFTP)")
+Rel(partner_cc, sftp, "Забирает файл")
+
+@enduml
