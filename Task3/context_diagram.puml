@@ -1,0 +1,28 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Контекстная диаграмма: Система открытия депозитов онлайн (MVP)
+
+Person(client, "Клиент", "Физическое лицо, желающее открыть депозит")
+Person(back_office, "Сотрудник бэк-офиса", "Обрабатывает заявки в АБС")
+Person(cc_operator, "Оператор кол-центра", "Обзванивает клиентов с сайта")
+
+System(deposit_system, "Система открытия депозитов", "Позволяет подать заявку на депозит через сайт и ИБ, управляет очередями и кэшем")
+
+System_Ext(internet_bank, "Интернет-банк", "Существующий монолит (ASP.NET)")
+System_Ext(site, "Сайт", "PHP + React")
+System_Ext(abs, "АБС", "Oracle + Delphi")
+System_Ext(cc_system, "Система кол-центра", "Java, PostgreSQL")
+System_Ext(sms_gateway, "СМС-шлюз", "Внешний оператор")
+System_Ext(partner_cc, "Партнёрский кол-центр", "Внешняя система, не входит в MVP")
+
+Rel(client, deposit_system, "Подаёт заявку, смотрит ставки", "HTTPS")
+Rel(deposit_system, internet_bank, "Вызывает REST API", "HTTP")
+Rel(deposit_system, site, "Вызывает REST API", "HTTP")
+Rel(deposit_system, abs, "Асинхронная запись через очередь", "RabbitMQ")
+Rel(deposit_system, cc_system, "Передаёт заявки", "HTTPS (API)")
+Rel(deposit_system, sms_gateway, "Отправляет СМС", "HTTPS")
+Rel(back_office, abs, "Обрабатывает заявки", "Delphi-клиент")
+Rel(cc_operator, cc_system, "Видит заявки, звонит клиенту", "Веб-интерфейс")
+
+@enduml
